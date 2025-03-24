@@ -3,6 +3,7 @@ import { tryToJSON } from "./utils.js";
 
 export function useNearAccount({
   initialValue,
+  condition,
   accountId,
   blockId,
   extraDeps,
@@ -11,15 +12,27 @@ export function useNearAccount({
   const [value, setValue] = useState(initialValue);
 
   useEffect(() => {
-    if (near) {
-      near
-        .queryAccount({
-          accountId,
-          blockId,
-        })
-        .then((result) => setValue(result.result))
-        .catch(() => setValue(errorValue));
+    if (
+      condition &&
+      !condition({
+        accountId,
+        blockId,
+        extraDeps,
+      })
+    ) {
+      setValue(errorValue);
+      return;
     }
+
+    near
+      .queryAccount({
+        accountId,
+        blockId,
+      })
+      .then(
+        (result) => setValue(result.result),
+        (e) => setValue(errorValue),
+      );
   }, [accountId, blockId, ...(extraDeps ?? [])]);
 
   return value;

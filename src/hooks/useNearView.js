@@ -3,6 +3,7 @@ import { tryToJSON } from "./utils.js";
 
 export function useNearView({
   initialValue,
+  condition,
   contractId,
   methodName,
   args,
@@ -16,18 +17,30 @@ export function useNearView({
   const serializedArgs = argsBase64 ?? tryToJSON(args);
 
   useEffect(() => {
-    if (near) {
-      near
-        .view({
-          contractId,
-          methodName,
-          args,
-          argsBase64,
-          blockId,
-        })
-        .then(setValue)
-        .catch((e) => setValue(errorValue));
+    if (
+      condition &&
+      !condition({
+        contractId,
+        methodName,
+        args,
+        argsBase64,
+        blockId,
+        extraDeps,
+      })
+    ) {
+      setValue(errorValue);
+      return;
     }
+
+    near
+      .view({
+        contractId,
+        methodName,
+        args,
+        argsBase64,
+        blockId,
+      })
+      .then(setValue, (e) => setValue(errorValue));
   }, [contractId, methodName, serializedArgs, blockId, ...(extraDeps ?? [])]);
 
   return value;

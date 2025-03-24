@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
+import { singletonHook } from "react-singleton-hook";
 
-export function useAccount() {
+function useAccountInner() {
   const [accountId, setAccountId] = useState(near.accountId());
 
   useEffect(() => {
@@ -9,3 +10,5 @@ export function useAccount() {
 
   return accountId;
 }
+
+export const useAccount = singletonHook(near.accountId(), useAccountInner);

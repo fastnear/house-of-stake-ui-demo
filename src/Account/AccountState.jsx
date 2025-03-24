@@ -11,16 +11,18 @@ export function AccountState(props) {
   const [loading, setLoading] = useState(false);
   const accountBalance = useNearAccount({
     initialValue: null,
+    condition: ({ accountId }) => !!accountId,
     accountId,
     extraDeps: [nonce],
     errorValue: null,
   })?.amount;
   const veNearBalance = useNearView({
     initialValue: "0",
+    condition: ({ extraDeps }) => !!extraDeps[1],
     contractId: Constants.VENEAR_CONTRACT_ID,
     methodName: "ft_balance_of",
     args: { account_id: accountId },
-    extraDeps: [nonce],
+    extraDeps: [nonce, accountId],
     errorValue: "0",
   });
   const accountInfo = useNearView({
@@ -31,27 +33,32 @@ export function AccountState(props) {
     extraDeps: [nonce],
     errorValue: null,
   });
+  let isLockupDeployed = !!accountInfo?.internal?.lockup_version;
   const lockupId = useNearView({
     initialValue: null,
+    condition: ({ extraDeps }) => extraDeps[1],
     contractId: Constants.VENEAR_CONTRACT_ID,
     methodName: "get_lockup_account_id",
     args: { account_id: accountId },
-    extraDeps: [nonce],
+    extraDeps: [nonce, isLockupDeployed],
     errorValue: null,
   });
   const lockupBalance = useNearAccount({
     initialValue: null,
+    condition: ({ extraDeps }) => extraDeps[1],
     accountId: lockupId,
-    extraDeps: [nonce],
+    extraDeps: [nonce, isLockupDeployed],
     errorValue: null,
   })?.amount;
-  const lockupDeployed = lockupBalance !== null && lockupBalance !== undefined;
+  isLockupDeployed =
+    isLockupDeployed && lockupBalance !== null && lockupBalance !== undefined;
   const lockedAmount = useNearView({
     initialValue: null,
+    condition: ({ extraDeps }) => extraDeps[1],
     contractId: lockupId,
     methodName: "get_venear_locked_balance",
     args: {},
-    extraDeps: [nonce],
+    extraDeps: [nonce, isLockupDeployed],
     errorValue: null,
   });
   const registrationCost = useNearView({
@@ -80,9 +87,9 @@ export function AccountState(props) {
         Lockup ID: <code>{lockupId}</code>
       </div>
       <div>
-        Lockup Deployed: <code>{lockupDeployed ? "Yes" : "No"}</code>
+        Lockup Deployed: <code>{isLockupDeployed ? "Yes" : "No"}</code>
       </div>
-      {lockupDeployed && (
+      {isLockupDeployed && (
         <>
           <div key={"lockup-balance"}>
             Lockup Balance:{" "}
@@ -131,7 +138,7 @@ export function AccountState(props) {
                 receiverId: Constants.VENEAR_CONTRACT_ID,
                 actions: [
                   near.actions.functionCall({
-                    methodName: "buy_tokens",
+                    methodName: "storage_deposit",
                     gas: $$`20 Tgas`,
                     deposit: registrationCost,
                     args: {},
