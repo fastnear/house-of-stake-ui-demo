@@ -1,13 +1,14 @@
 import { useAccount } from "../hooks/useAccount.js";
 import { Constants } from "../hooks/constants.js";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useNearView } from "../hooks/useNearView.js";
 import { useNearAccount } from "../hooks/useNearAccount.js";
+import { useNonce } from "../hooks/useNonce.js";
 
 export function AccountState(props) {
   const accountId = useAccount();
+  const nonce = useNonce();
   const [loading, setLoading] = useState(false);
-  const [nonce, setNonce] = useState(0);
   const accountBalance = useNearAccount({
     initialValue: null,
     accountId,
@@ -61,14 +62,8 @@ export function AccountState(props) {
     errorValue: null,
   })?.min;
 
-  useEffect(() => {
-    near.event.onTx(() => {
-      setNonce((nonce) => nonce + 1);
-    });
-  }, []);
-
   return (
-    <div>
+    <div className="mb-3">
       <h3>Account State</h3>
       <div>
         Account ID: <code>{accountId}</code>
