@@ -70,6 +70,15 @@ export function AccountState(props) {
     extraDeps: [nonce, isLockupDeployed],
     errorValue: null,
   });
+  const lockupLiquidOwnersBalance = useNearView({
+    initialValue: null,
+    condition: ({ extraDeps }) => extraDeps[1],
+    contractId: lockupId,
+    methodName: "get_liquid_owners_balance",
+    args: {},
+    extraDeps: [nonce, isLockupDeployed],
+    errorValue: null,
+  });
   const lockupLiquidAmount = useNearView({
     initialValue: null,
     condition: ({ extraDeps }) => extraDeps[1],
@@ -79,6 +88,34 @@ export function AccountState(props) {
     extraDeps: [nonce, isLockupDeployed],
     errorValue: null,
   });
+  const withdrawableAmount =
+    lockupLiquidOwnersBalance && lockupLiquidAmount
+      ? Big(lockupLiquidOwnersBalance).gt(Big(lockupLiquidAmount))
+        ? lockupLiquidAmount
+        : lockupLiquidOwnersBalance
+      : "0";
+  const lockupPendingAmount = useNearView({
+    initialValue: null,
+    condition: ({ extraDeps }) => extraDeps[1],
+    contractId: lockupId,
+    methodName: "get_venear_pending_balance",
+    args: {},
+    extraDeps: [nonce, isLockupDeployed],
+    errorValue: null,
+  });
+  const lockupUnlockTimestampNs = useNearView({
+    initialValue: null,
+    condition: ({ extraDeps }) => extraDeps[1],
+    contractId: lockupId,
+    methodName: "get_venear_unlock_timestamp",
+    args: {},
+    extraDeps: [nonce, isLockupDeployed],
+    errorValue: null,
+  });
+  const untilUnlock = Math.max(
+    0,
+    parseFloat(lockupUnlockTimestampNs || "0") / 1e6 - new Date().getTime(),
+  );
   const registrationCost = useNearView({
     initialValue: null,
     contractId: Constants.VENEAR_CONTRACT_ID,
@@ -170,6 +207,12 @@ export function AccountState(props) {
             <div key={"locked-amount"}>
               Locked: <code>{toNear(lockedAmount)}</code>
             </div>
+            {untilUnlock > 0 && (
+              <div key={"until-unlock"}>
+                Unlock in:{" "}
+                <code>{Math.trunc(untilUnlock / 600) / 100} min</code>
+              </div>
+            )}
             {stakingPool && (
               <div key={"staking-pool"}>
                 Selected Staking Pool: <code>{stakingPool}</code>
@@ -217,8 +260,68 @@ export function AccountState(props) {
                 disabled={
                   loading ||
                   !lockupId ||
-                  !lockupLiquidAmount ||
-                  Big(lockupLiquidAmount).lt(Big(10).pow(21))
+                  !lockedAmount ||
+                  Big(lockedAmount).eq(0)
+                }
+                onClick={async () => {
+                  setLoading(true);
+                  const res = await near.sendTx({
+                    receiverId: lockupId,
+                    actions: [
+                      near.actions.functionCall({
+                        methodName: "begin_unlock_near",
+                        gas: $$`100 Tgas`,
+                        deposit: "1",
+                        args: {},
+                      }),
+                    ],
+                    waitUntil: "INCLUDED",
+                  });
+                  console.log("begin_unlock_near TX", res);
+                  setLoading(false);
+                }}
+              >
+                Begin unlock {toNear(lockedAmount)}
+              </button>
+
+              <button
+                className="btn btn-primary ms-2"
+                disabled={
+                  loading ||
+                  !lockupId ||
+                  !lockupPendingAmount ||
+                  Big(lockupPendingAmount).eq(0) ||
+                  untilUnlock > 0
+                }
+                onClick={async () => {
+                  setLoading(true);
+                  const res = await near.sendTx({
+                    receiverId: lockupId,
+                    actions: [
+                      near.actions.functionCall({
+                        methodName: "end_unlock_near",
+                        gas: $$`100 Tgas`,
+                        deposit: "1",
+                        args: {},
+                      }),
+                    ],
+                    waitUntil: "INCLUDED",
+                  });
+                  console.log("end_unlock_near TX", res);
+                  setLoading(false);
+                }}
+              >
+                {untilUnlock > 0 && "⌛ "}Finish unlock{" "}
+                {toNear(lockupPendingAmount)}
+              </button>
+
+              <button
+                className="btn btn-secondary ms-2"
+                disabled={
+                  loading ||
+                  !lockupId ||
+                  !withdrawableAmount ||
+                  Big(withdrawableAmount).lt(Big(10).pow(21))
                 }
                 onClick={async () => {
                   setLoading(true);
@@ -229,49 +332,54 @@ export function AccountState(props) {
                         methodName: "transfer",
                         gas: $$`100 Tgas`,
                         args: {
-                          amount: lockupLiquidAmount,
+                          amount: withdrawableAmount,
                           receiver_id: accountId,
                         },
                       }),
                     ],
                     waitUntil: "INCLUDED",
                   });
-                  console.log("lock all TX", res);
+                  console.log("transfer TX", res);
                   setLoading(false);
                 }}
               >
-                Transfer to owner {toNear(lockupLiquidAmount)}
+                Transfer to owner {toNear(withdrawableAmount)}
               </button>
 
               <div className={"mt-2"}>
                 Select Staking Pool:
-                <input
-                  type={"textbox"}
-                  value={selectStakingPool}
-                  onChange={(e) => setSelectStakingPool(e.target.value)}
-                />
-                <button
-                  className="btn btn-secondary ms-2"
-                  disabled={loading || !lockupId}
-                  onClick={async () => {
-                    setLoading(true);
-                    const res = await near.sendTx({
-                      receiverId: lockupId,
-                      actions: [
-                        near.actions.functionCall({
-                          methodName: "select_staking_pool",
-                          gas: $$`100 Tgas`,
-                          args: { staking_pool_account_id: selectStakingPool },
-                        }),
-                      ],
-                      waitUntil: "INCLUDED",
-                    });
-                    console.log("lock all TX", res);
-                    setLoading(false);
-                  }}
-                >
-                  Select Staking Pool
-                </button>
+                <div className="input-group">
+                  <input
+                    className="form-control"
+                    type={"textbox"}
+                    value={selectStakingPool}
+                    onChange={(e) => setSelectStakingPool(e.target.value)}
+                  />
+                  <button
+                    className="btn btn-secondary"
+                    disabled={loading || !lockupId}
+                    onClick={async () => {
+                      setLoading(true);
+                      const res = await near.sendTx({
+                        receiverId: lockupId,
+                        actions: [
+                          near.actions.functionCall({
+                            methodName: "select_staking_pool",
+                            gas: $$`100 Tgas`,
+                            args: {
+                              staking_pool_account_id: selectStakingPool,
+                            },
+                          }),
+                        ],
+                        waitUntil: "INCLUDED",
+                      });
+                      console.log("select_staking_pool TX", res);
+                      setLoading(false);
+                    }}
+                  >
+                    Select Staking Pool
+                  </button>
+                </div>
               </div>
 
               <div className={"mt-2"}>
@@ -281,8 +389,8 @@ export function AccountState(props) {
                     loading ||
                     !lockupId ||
                     !selectStakingPool ||
-                    !lockupLiquidAmount ||
-                    Big(lockupLiquidAmount).lt(Big(10).pow(21))
+                    !lockupLiquidOwnersBalance ||
+                    Big(lockupLiquidOwnersBalance).lt(Big(10).pow(21))
                   }
                   onClick={async () => {
                     setLoading(true);
@@ -292,16 +400,16 @@ export function AccountState(props) {
                         near.actions.functionCall({
                           methodName: "deposit_and_stake",
                           gas: $$`200 Tgas`,
-                          args: { amount: lockupLiquidAmount },
+                          args: { amount: lockupLiquidOwnersBalance },
                         }),
                       ],
                       waitUntil: "INCLUDED",
                     });
-                    console.log("lock all TX", res);
+                    console.log("deposit_and_stake TX", res);
                     setLoading(false);
                   }}
                 >
-                  Stake {toNear(lockupLiquidAmount)}
+                  Stake {toNear(lockupLiquidOwnersBalance)}
                 </button>
 
                 <button
@@ -325,7 +433,7 @@ export function AccountState(props) {
                       ],
                       waitUntil: "INCLUDED",
                     });
-                    console.log("lock all TX", res);
+                    console.log("unstake TX", res);
                     setLoading(false);
                   }}
                 >
@@ -353,7 +461,7 @@ export function AccountState(props) {
                       ],
                       waitUntil: "INCLUDED",
                     });
-                    console.log("lock all TX", res);
+                    console.log("unstake_all TX", res);
                     setLoading(false);
                   }}
                 >
@@ -381,11 +489,40 @@ export function AccountState(props) {
                       ],
                       waitUntil: "INCLUDED",
                     });
-                    console.log("lock all TX", res);
+                    console.log("withdraw_all_from_staking_pool TX", res);
                     setLoading(false);
                   }}
                 >
                   Withdraw All
+                </button>
+
+                <button
+                  className="btn btn-danger ms-2"
+                  disabled={
+                    loading ||
+                    !lockupId ||
+                    !lockedAmount ||
+                    lockedAmount !== "0"
+                  }
+                  onClick={async () => {
+                    setLoading(true);
+                    const res = await near.sendTx({
+                      receiverId: lockupId,
+                      actions: [
+                        near.actions.functionCall({
+                          methodName: "delete_lockup",
+                          gas: $$`200 Tgas`,
+                          args: {},
+                          deposit: "1",
+                        }),
+                      ],
+                      waitUntil: "INCLUDED",
+                    });
+                    console.log("delete lockup TX", res);
+                    setLoading(false);
+                  }}
+                >
+                  DELETE LOCKUP 💣
                 </button>
               </div>
             </div>
