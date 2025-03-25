@@ -45,7 +45,7 @@ export function AccountState(props) {
     contractId: Constants.VENEAR_CONTRACT_ID,
     methodName: "get_lockup_account_id",
     args: { account_id: accountId },
-    extraDeps: [nonce, isLockupDeployed],
+    extraDeps: [nonce, accountId],
     errorValue: null,
   });
   const lockupBalance = useNearAccount({
