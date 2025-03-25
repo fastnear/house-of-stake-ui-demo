@@ -1,5 +1,4 @@
 import { useEffect, useState } from "react";
-import { tryToJSON } from "./utils.js";
 
 export function useNearAccount({
   initialValue,
@@ -29,10 +28,8 @@ export function useNearAccount({
         accountId,
         blockId,
       })
-      .then(
-        (result) => setValue(result.result),
-        (e) => setValue(errorValue),
-      );
+      .then((result) => setValue(result.result))
+      .catch((e) => setValue(errorValue));
   }, [accountId, blockId, ...(extraDeps ?? [])]);
 
   return value;

@@ -769,7 +769,7 @@ base58-js@*:
   resolved "https://registry.yarnpkg.com/base58-js/-/base58-js-3.0.2.tgz#182885b221ba15763403deda0d93dc1ea82abcdd"
   integrity sha512-9WL6C9Ai3J+Me1PAOTZGvaH2xua6dGyZddGWhWXrV7O4i29cNUunAb42Zd87Jm0A6EW31gu47fKnYmAVJAx27Q==
 
-big.js@*:
+big.js@*, big.js@^6.2.2:
   version "6.2.2"
   resolved "https://registry.yarnpkg.com/big.js/-/big.js-6.2.2.tgz#be3bb9ac834558b53b099deef2a1d06ac6368e1a"
   integrity sha512-y/ie+Faknx7sZA5MfGA2xKlu0GDv8RWrXGsmlteyJQ2lvoKv9GBK/fpRMc2qlSoBAgNxrixICFCBefIq8WCQpQ==

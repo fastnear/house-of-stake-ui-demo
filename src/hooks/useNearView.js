@@ -40,7 +40,8 @@ export function useNearView({
         argsBase64,
         blockId,
       })
-      .then(setValue, (e) => setValue(errorValue));
+      .then(setValue)
+      .catch((e) => setValue(errorValue));
   }, [contractId, methodName, serializedArgs, blockId, ...(extraDeps ?? [])]);
 
   return value;
