@@ -13,6 +13,9 @@ export function AccountState(props) {
   const accountId = useAccount();
   const nonce = useNonce();
   const [loading, setLoading] = useState(false);
+  const [selectStakingPool, setSelectStakingPool] = useState(
+    "chorusone.pool.f863973.m0",
+  );
   const accountBalance = useNearAccount({
     initialValue: null,
     condition: ({ accountId }) => !!accountId,
@@ -90,6 +93,20 @@ export function AccountState(props) {
     args: {},
     errorValue: null,
   });
+  const stakingPool = useNearView({
+    initialValue: null,
+    contractId: lockupId,
+    methodName: "get_staking_pool_account_id",
+    args: {},
+    errorValue: null,
+  });
+  const knownDepositedBalance = useNearView({
+    initialValue: null,
+    contractId: lockupId,
+    methodName: "get_known_deposited_balance",
+    args: {},
+    errorValue: null,
+  });
 
   return (
     <div className="mb-3">
@@ -153,6 +170,18 @@ export function AccountState(props) {
             <div key={"locked-amount"}>
               Locked: <code>{toNear(lockedAmount)}</code>
             </div>
+            {stakingPool && (
+              <div key={"staking-pool"}>
+                Selected Staking Pool: <code>{stakingPool}</code>
+                {Big(knownDepositedBalance).lt(0) && (
+                  <div key={"known-deposited-balance"}>
+                    Known Deposited Balance:{" "}
+                    <code>{toNear(knownDepositedBalance)}</code>
+                  </div>
+                )}
+              </div>
+            )}
+
             <div>
               <button
                 className="btn btn-primary"
@@ -182,6 +211,183 @@ export function AccountState(props) {
               >
                 Lock {toNear(lockupLiquidAmount)}
               </button>
+
+              <button
+                className="btn btn-secondary ms-2"
+                disabled={
+                  loading ||
+                  !lockupId ||
+                  !lockupLiquidAmount ||
+                  Big(lockupLiquidAmount).lt(Big(10).pow(21))
+                }
+                onClick={async () => {
+                  setLoading(true);
+                  const res = await near.sendTx({
+                    receiverId: lockupId,
+                    actions: [
+                      near.actions.functionCall({
+                        methodName: "transfer",
+                        gas: $$`100 Tgas`,
+                        args: {
+                          amount: lockupLiquidAmount,
+                          receiver_id: accountId,
+                        },
+                      }),
+                    ],
+                    waitUntil: "INCLUDED",
+                  });
+                  console.log("lock all TX", res);
+                  setLoading(false);
+                }}
+              >
+                Transfer to owner {toNear(lockupLiquidAmount)}
+              </button>
+
+              <div className={"mt-2"}>
+                Select Staking Pool:
+                <input
+                  type={"textbox"}
+                  value={selectStakingPool}
+                  onChange={(e) => setSelectStakingPool(e.target.value)}
+                />
+                <button
+                  className="btn btn-secondary ms-2"
+                  disabled={loading || !lockupId}
+                  onClick={async () => {
+                    setLoading(true);
+                    const res = await near.sendTx({
+                      receiverId: lockupId,
+                      actions: [
+                        near.actions.functionCall({
+                          methodName: "select_staking_pool",
+                          gas: $$`100 Tgas`,
+                          args: { staking_pool_account_id: selectStakingPool },
+                        }),
+                      ],
+                      waitUntil: "INCLUDED",
+                    });
+                    console.log("lock all TX", res);
+                    setLoading(false);
+                  }}
+                >
+                  Select Staking Pool
+                </button>
+              </div>
+
+              <div className={"mt-2"}>
+                <button
+                  className="btn btn-primary"
+                  disabled={
+                    loading ||
+                    !lockupId ||
+                    !selectStakingPool ||
+                    !lockupLiquidAmount ||
+                    Big(lockupLiquidAmount).lt(Big(10).pow(21))
+                  }
+                  onClick={async () => {
+                    setLoading(true);
+                    const res = await near.sendTx({
+                      receiverId: lockupId,
+                      actions: [
+                        near.actions.functionCall({
+                          methodName: "deposit_and_stake",
+                          gas: $$`200 Tgas`,
+                          args: { amount: lockupLiquidAmount },
+                        }),
+                      ],
+                      waitUntil: "INCLUDED",
+                    });
+                    console.log("lock all TX", res);
+                    setLoading(false);
+                  }}
+                >
+                  Stake {toNear(lockupLiquidAmount)}
+                </button>
+
+                <button
+                  className="btn btn-primary ms-2"
+                  disabled={
+                    loading ||
+                    !lockupId ||
+                    knownDepositedBalance ||
+                    !selectStakingPool
+                  }
+                  onClick={async () => {
+                    setLoading(true);
+                    const res = await near.sendTx({
+                      receiverId: lockupId,
+                      actions: [
+                        near.actions.functionCall({
+                          methodName: "unstake",
+                          gas: $$`200 Tgas`,
+                          args: { amount: Big(10).pow(24).toFixed() },
+                        }),
+                      ],
+                      waitUntil: "INCLUDED",
+                    });
+                    console.log("lock all TX", res);
+                    setLoading(false);
+                  }}
+                >
+                  Unstake {toNear(Big(10).pow(24))}
+                </button>
+
+                <button
+                  className="btn btn-primary ms-2"
+                  disabled={
+                    loading ||
+                    !lockupId ||
+                    knownDepositedBalance ||
+                    !selectStakingPool
+                  }
+                  onClick={async () => {
+                    setLoading(true);
+                    const res = await near.sendTx({
+                      receiverId: lockupId,
+                      actions: [
+                        near.actions.functionCall({
+                          methodName: "unstake_all",
+                          gas: $$`200 Tgas`,
+                          args: {},
+                        }),
+                      ],
+                      waitUntil: "INCLUDED",
+                    });
+                    console.log("lock all TX", res);
+                    setLoading(false);
+                  }}
+                >
+                  Unstake All
+                </button>
+
+                <button
+                  className="btn btn-primary ms-2"
+                  disabled={
+                    loading ||
+                    !lockupId ||
+                    knownDepositedBalance ||
+                    !selectStakingPool
+                  }
+                  onClick={async () => {
+                    setLoading(true);
+                    const res = await near.sendTx({
+                      receiverId: lockupId,
+                      actions: [
+                        near.actions.functionCall({
+                          methodName: "withdraw_all_from_staking_pool",
+                          gas: $$`200 Tgas`,
+                          args: {},
+                        }),
+                      ],
+                      waitUntil: "INCLUDED",
+                    });
+                    console.log("lock all TX", res);
+                    setLoading(false);
+                  }}
+                >
+                  Withdraw All
+                </button>
+              </div>
             </div>
           </div>
         ) : (
