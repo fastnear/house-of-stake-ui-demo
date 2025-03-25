@@ -93,7 +93,7 @@ export function AccountState(props) {
 
   return (
     <div className="mb-3">
-      <h3>Account State</h3>
+      <h3 id="account">Account State</h3>
       <div>
         Account ID: <code>{accountId}</code>
       </div>
@@ -140,7 +140,7 @@ export function AccountState(props) {
           </button>
         </div>
       )}
-      <h3>Lockup State</h3>
+      <h3 id="lockup">Lockup State</h3>
       <div>
         Lockup ID: <code>{lockupId}</code>
       </div>

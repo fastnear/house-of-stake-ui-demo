@@ -2,9 +2,9 @@ import { useState } from "react";
 import "./App.css";
 import { Header } from "./Header/Header.jsx";
 import { useAccount } from "./hooks/useAccount.js";
-import { Main } from "./Main/Main.jsx";
 import { AccountState } from "./Account/AccountState.jsx";
 import { VenearState } from "./Venear/VenearState.jsx";
+import { VotingState } from "./Voting/VotingState.jsx";
 
 function App() {
   const accountId = useAccount();
@@ -21,6 +21,7 @@ function App() {
           </div>
         )}
         <VenearState />
+        <VotingState />
       </div>
     </div>
   );
