@@ -5,6 +5,16 @@ import { useNearView } from "../hooks/useNearView.js";
 import { Constants } from "../hooks/constants.js";
 import { useNonce } from "../hooks/useNonce.js";
 import { processAccount } from "../hooks/utils.js";
+import Big from "big.js";
+
+function voteText(proposal, vote) {
+  const totalVotes = proposal.total_votes;
+  const votes = proposal.votes[vote];
+  const percent = Big(totalVotes.total_venear).gt(0)
+    ? Big(votes.total_venear).div(Big(totalVotes.total_venear))
+    : Big(0);
+  return `${Big(votes.total_venear).div(1e24).toFixed(3)} veNEAR (${percent.mul(100).toFixed(2)}%)`;
+}
 
 export function Proposal(props) {
   const { proposal, votingConfig } = props;
@@ -96,7 +106,7 @@ export function Proposal(props) {
                 type="radio"
                 checked={activeVote === index}
                 name="votes"
-                id={`option-${index}`}
+                id={`option-${proposal.id}-${index}`}
                 onChange={(e) => {
                   if (e.target.checked) {
                     setActiveVote(index);
@@ -105,14 +115,19 @@ export function Proposal(props) {
               />
               <label
                 className="btn btn-outline-primary text-start"
-                htmlFor={`option-${index}`}
+                htmlFor={`option-${proposal.id}-${index}`}
               >
-                {existingVote === index && (
-                  <span key={"vote"} title={"Your existing vote"}>
-                    ✅{" "}
-                  </span>
-                )}
-                {option}
+                <div className={"d-flex justify-content-between"}>
+                  <div>
+                    {existingVote === index && (
+                      <span key={"vote"} title={"Your existing vote"}>
+                        ✅{" "}
+                      </span>
+                    )}
+                    {option}
+                  </div>
+                  <div>{voteText(proposal, index)}</div>
+                </div>
               </label>
             </React.Fragment>
           ))}
