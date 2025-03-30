@@ -28,6 +28,7 @@ export function VotingState(props) {
     extraDeps: [nonce, numProposals],
     errorValue: null,
   })?.[0];
+  const [showLast, setShowLast] = useState(false);
 
   const numApprovedProposals = useNearView({
     initialValue: null,
@@ -61,8 +62,16 @@ export function VotingState(props) {
         <code>{numProposals === null ? "..." : numProposals}</code>
       </div>
       <div>
-        Last Proposal: <code>{lastProposal ? lastProposal.title : "..."}</code>
+        Last Proposal:{" "}
+        <code onClick={() => lastProposal && setShowLast((s) => !s)}>
+          {lastProposal ? lastProposal.title : "..."}
+        </code>
       </div>
+      {showLast && lastProposal && (
+        <div className="mt-5">
+          <Proposal proposal={lastProposal} />
+        </div>
+      )}
       <div>
         Number of Approved Proposals:{" "}
         <code>
@@ -71,13 +80,14 @@ export function VotingState(props) {
       </div>
       <div>
         Latest Approved Proposals (select to display):{" "}
-        {lastApprovedProposals
-          ? lastApprovedProposals.reverse().map((p) => {
-              return (
-                <div key={p.id}>
-                  <div className="form-check">
+        <div className="d-grid gap-2">
+          {lastApprovedProposals
+            ? lastApprovedProposals.toReversed().map((p) => {
+                return (
+                  <>
                     <input
-                      className="form-check-input"
+                      key={`i-${p.id}`}
+                      className="btn-check"
                       type="radio"
                       checked={activeProposalId === p.id}
                       name="proposals"
@@ -89,16 +99,17 @@ export function VotingState(props) {
                       }}
                     />
                     <label
-                      className="form-check-label"
+                      key={`l-${p.id}`}
+                      className="btn btn-outline-primary text-start"
                       htmlFor={`option-${p.id}`}
                     >
-                      #{p.id}: <code>{p.title}</code>
+                      #{p.id}: {p.title}
                     </label>
-                  </div>
-                </div>
-              );
-            })
-          : "..."}
+                  </>
+                );
+              })
+            : "..."}
+        </div>
       </div>
       {activeProposalId !== null && (
         <div key="active-proposal" className="mt-5">
