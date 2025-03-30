@@ -3,6 +3,7 @@ import { useNonce } from "../hooks/useNonce.js";
 import { Constants } from "../hooks/constants.js";
 import { useNearView } from "../hooks/useNearView.js";
 import { Proposal } from "./Proposal.jsx";
+import React from "react";
 
 const MAX_NUM_PROPOSALS = 10;
 
@@ -17,18 +18,18 @@ export function VotingState(props) {
     extraDeps: [nonce],
     errorValue: "err",
   });
-  const lastProposal = useNearView({
+  const lastProposals = useNearView({
     initialValue: null,
     condition: ({ extraDeps }) => !!extraDeps[1],
     contractId: Constants.VOTING_CONTRACT_ID,
     methodName: "get_proposals",
     args: {
-      from_index: (numProposals || 0) - 1,
+      from_index: Math.max(0, (numProposals || 0) - MAX_NUM_PROPOSALS),
     },
     extraDeps: [nonce, numProposals],
     errorValue: null,
-  })?.[0];
-  const [showLast, setShowLast] = useState(false);
+  });
+  const [showLast, setShowLast] = useState(null);
 
   const numApprovedProposals = useNearView({
     initialValue: null,
@@ -62,14 +63,26 @@ export function VotingState(props) {
         <code>{numProposals === null ? "..." : numProposals}</code>
       </div>
       <div>
-        Last Proposal:{" "}
-        <code onClick={() => lastProposal && setShowLast((s) => !s)}>
-          {lastProposal ? lastProposal.title : "..."}
-        </code>
+        Last Proposals:{" "}
+        {lastProposals
+          ? lastProposals.map((p) => {
+              return (
+                <div key={p.id}>
+                  <code
+                    onClick={() => {
+                      setShowLast(p.id);
+                    }}
+                  >
+                    #{p.id}: {p.title}
+                  </code>
+                </div>
+              );
+            })
+          : "..."}
       </div>
-      {showLast && lastProposal && (
-        <div className="mt-5">
-          <Proposal proposal={lastProposal} />
+      {showLast !== null && lastProposals && (
+        <div className="mt-1 mb-3">
+          <Proposal proposal={lastProposals[showLast]} />
         </div>
       )}
       <div>
@@ -80,18 +93,17 @@ export function VotingState(props) {
       </div>
       <div>
         Latest Approved Proposals (select to display):{" "}
-        <div className="d-grid gap-2">
+        <div className="d-grid gap-2 mt-2">
           {lastApprovedProposals
             ? lastApprovedProposals.toReversed().map((p) => {
                 return (
-                  <>
+                  <React.Fragment key={p.id}>
                     <input
-                      key={`i-${p.id}`}
                       className="btn-check"
                       type="radio"
                       checked={activeProposalId === p.id}
                       name="proposals"
-                      id={`option-${p.id}`}
+                      id={`p-${p.id}`}
                       onChange={(e) => {
                         if (e.target.checked) {
                           setActiveProposalId(p.id);
@@ -101,11 +113,11 @@ export function VotingState(props) {
                     <label
                       key={`l-${p.id}`}
                       className="btn btn-outline-primary text-start"
-                      htmlFor={`option-${p.id}`}
+                      htmlFor={`p-${p.id}`}
                     >
                       #{p.id}: {p.title}
                     </label>
-                  </>
+                  </React.Fragment>
                 );
               })
             : "..."}
@@ -113,7 +125,11 @@ export function VotingState(props) {
       </div>
       {activeProposalId !== null && (
         <div key="active-proposal" className="mt-5">
-          <Proposal proposal={lastApprovedProposals[activeProposalId]} />
+          <Proposal
+            proposal={lastApprovedProposals.find(
+              (p) => p.id === activeProposalId,
+            )}
+          />
         </div>
       )}
     </div>
