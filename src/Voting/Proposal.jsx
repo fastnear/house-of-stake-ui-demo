@@ -13,7 +13,8 @@ function voteText(proposal, vote) {
   const percent = Big(totalVotes.total_venear).gt(0)
     ? Big(votes.total_venear).div(Big(totalVotes.total_venear))
     : Big(0);
-  return `${Big(votes.total_venear).div(1e24).toFixed(3)} veNEAR (${percent.mul(100).toFixed(2)}%)`;
+  const numVotes = votes.total_votes;
+  return `${Big(votes.total_venear).div(1e24).toFixed(3)} veNEAR (${percent.mul(100).toFixed(2)}% ${numVotes} votes)`;
 }
 
 export function Proposal(props) {
