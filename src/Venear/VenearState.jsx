@@ -72,7 +72,7 @@ export function VenearState(props) {
       });
   }, [numAccounts, nonce]);
   return (
-    <div className="mb-3">
+    <div className="mb-5">
       <h3 id="venear">veNEAR Contract State</h3>
       <div>
         Contract ID: <code>{Constants.VENEAR_CONTRACT_ID}</code>

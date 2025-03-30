@@ -34,6 +34,14 @@ export function Header(props) {
             Voting
           </a>
         </li>
+
+        {props.accountId && (
+          <li className="nav-item">
+            <a className="nav-link" href="#create-proposal">
+              Create Proposal
+            </a>
+          </li>
+        )}
         <AccountNavbar />
       </ul>
     </header>

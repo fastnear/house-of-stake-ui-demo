@@ -150,7 +150,7 @@ export function AccountState(props) {
   });
 
   return (
-    <div className="mb-3">
+    <div className="mb-5">
       <h3 id="account">Account State</h3>
       <div>
         Account ID: <code>{accountId}</code>
@@ -198,7 +198,9 @@ export function AccountState(props) {
           </button>
         </div>
       )}
-      <h3 id="lockup">Lockup State</h3>
+      <h3 id="lockup" className="mt-5">
+        Lockup State
+      </h3>
       <div>
         Lockup ID: <code>{lockupId}</code>
       </div>
@@ -224,14 +226,14 @@ export function AccountState(props) {
                   loading ||
                   !lockupId ||
                   !accountBalance ||
-                  Big(accountBalance).lt(Big(10).pow(24))
+                  Big(accountBalance).lt(Big(10).pow(24).mul(5))
                 }
                 onClick={async () => {
                   setLoading(true);
                   const res = await near.sendTx({
                     receiverId: lockupId,
                     actions: [
-                      near.actions.transfer(Big(10).pow(24).toFixed(0)),
+                      near.actions.transfer(Big(10).pow(24).mul(5).toFixed(0)),
                     ],
                     waitUntil: "INCLUDED",
                   });
@@ -239,7 +241,7 @@ export function AccountState(props) {
                   setLoading(false);
                 }}
               >
-                Deposit {toNear(Big(10).pow(24))}
+                Deposit {toNear(Big(10).pow(24).mul(5))}
               </button>
 
               <button
@@ -373,7 +375,7 @@ export function AccountState(props) {
                       onChange={(e) => setSelectStakingPool(e.target.value)}
                     />
                     <button
-                      className="btn btn-secondary"
+                      className="btn btn-primary"
                       disabled={loading || !lockupId}
                       onClick={async () => {
                         setLoading(true);
@@ -383,6 +385,7 @@ export function AccountState(props) {
                             near.actions.functionCall({
                               methodName: "select_staking_pool",
                               gas: $$`100 Tgas`,
+                              deposit: "1",
                               args: {
                                 staking_pool_account_id: selectStakingPool,
                               },
@@ -419,6 +422,7 @@ export function AccountState(props) {
                           near.actions.functionCall({
                             methodName: "refresh_staking_pool_balance",
                             gas: $$`100 Tgas`,
+                            deposit: "1",
                             args: {},
                           }),
                         ],
@@ -448,6 +452,7 @@ export function AccountState(props) {
                           near.actions.functionCall({
                             methodName: "unselect_staking_pool",
                             gas: $$`100 Tgas`,
+                            deposit: "1",
                             args: {
                               staking_pool_account_id: selectStakingPool,
                             },
@@ -482,6 +487,7 @@ export function AccountState(props) {
                         near.actions.functionCall({
                           methodName: "deposit_and_stake",
                           gas: $$`200 Tgas`,
+                          deposit: "1",
                           args: { amount: lockupLiquidOwnersBalance },
                         }),
                       ],
@@ -511,6 +517,7 @@ export function AccountState(props) {
                         near.actions.functionCall({
                           methodName: "unstake",
                           gas: $$`200 Tgas`,
+                          deposit: "1",
                           args: { amount: Big(10).pow(24).toFixed() },
                         }),
                       ],
@@ -539,6 +546,7 @@ export function AccountState(props) {
                         near.actions.functionCall({
                           methodName: "unstake_all",
                           gas: $$`200 Tgas`,
+                          deposit: "1",
                           args: {},
                         }),
                       ],
@@ -568,6 +576,7 @@ export function AccountState(props) {
                         near.actions.functionCall({
                           methodName: "withdraw_all_from_staking_pool",
                           gas: $$`200 Tgas`,
+                          deposit: "1",
                           args: {},
                         }),
                       ],
