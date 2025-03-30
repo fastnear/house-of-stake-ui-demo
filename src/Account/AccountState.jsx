@@ -1,6 +1,6 @@
 import { useAccount } from "../hooks/useAccount.js";
 import { Constants } from "../hooks/constants.js";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useNearView } from "../hooks/useNearView.js";
 import { useNearAccount } from "../hooks/useNearAccount.js";
 import { useNonce } from "../hooks/useNonce.js";
@@ -40,7 +40,10 @@ export function AccountState(props) {
     extraDeps: [nonce],
     errorValue: null,
   });
+  const [showAccountInfo, setShowAccountInfo] = useState(false);
   const accountInfoReady = accountInfo !== undefined;
+  const isDelegating = !!accountInfo?.account?.delegation;
+  const [delegateTo, setDelegateTo] = useState("");
   let isLockupDeployed = !!accountInfo?.internal?.lockup_version;
   const lockupId = useNearView({
     initialValue: null,
@@ -153,7 +156,9 @@ export function AccountState(props) {
     <div className="mb-5">
       <h3 id="account">Account State</h3>
       <div>
-        Account ID: <code>{accountId}</code>
+        <span onClick={() => setShowAccountInfo((s) => !s)}>
+          Account ID: <code>{accountId}</code>
+        </span>
       </div>
       <div>
         Account Balance: <code>{toNear(accountBalance)}</code>
@@ -161,16 +166,18 @@ export function AccountState(props) {
       <div>
         veNEAR Balance: <code>{toNear(veNearBalance)}</code>
       </div>
-      <div>
-        Account Info:{" "}
-        <code>
-          {accountInfo ? (
-            <pre>{JSON.stringify(accountInfo, null, 2)}</pre>
-          ) : (
-            "Not registered"
-          )}
-        </code>
-      </div>
+      {showAccountInfo && (
+        <div key="account-info">
+          Account Info:
+          <code>
+            {accountInfo ? (
+              <pre>{JSON.stringify(accountInfo, null, 2)}</pre>
+            ) : (
+              "Not registered"
+            )}
+          </code>
+        </div>
+      )}
       {accountInfoReady && !accountInfo && (
         <div key="register">
           <button
@@ -196,6 +203,78 @@ export function AccountState(props) {
           >
             Register Account
           </button>
+        </div>
+      )}
+      {accountInfo && (
+        <div key="delegation">
+          <div className={"mb-2"}>
+            Delegate all veNEAR to:
+            <div className="input-group">
+              <input
+                className="form-control"
+                type={"text"}
+                placeholder="receiver_id"
+                value={delegateTo}
+                onChange={(e) => setDelegateTo(e.target.value)}
+              />
+              <button
+                className="btn btn-primary"
+                disabled={loading || !delegateTo}
+                onClick={async () => {
+                  setLoading(true);
+                  const res = await near.sendTx({
+                    receiverId: Constants.VENEAR_CONTRACT_ID,
+                    actions: [
+                      near.actions.functionCall({
+                        methodName: "delegate_all",
+                        gas: $$`100 Tgas`,
+                        deposit: "1",
+                        args: {
+                          receiver_id: delegateTo,
+                        },
+                      }),
+                    ],
+                    waitUntil: "INCLUDED",
+                  });
+                  console.log("delegate_all TX", res);
+                  setLoading(false);
+                }}
+              >
+                Delegate all veNEAR
+              </button>
+            </div>
+          </div>
+          {isDelegating && (
+            <div key="delegation-info">
+              <div>
+                Delegating to:{" "}
+                <code>{accountInfo.account.delegation.account_id}</code>
+              </div>
+              <button
+                className="btn btn-outline-danger"
+                disabled={loading}
+                onClick={async () => {
+                  setLoading(true);
+                  const res = await near.sendTx({
+                    receiverId: Constants.VENEAR_CONTRACT_ID,
+                    actions: [
+                      near.actions.functionCall({
+                        methodName: "undelegate",
+                        gas: $$`100 Tgas`,
+                        deposit: "1",
+                        args: {},
+                      }),
+                    ],
+                    waitUntil: "INCLUDED",
+                  });
+                  console.log("undelegate TX", res);
+                  setLoading(false);
+                }}
+              >
+                Undelegate all veNEAR
+              </button>
+            </div>
+          )}
         </div>
       )}
       <h3 id="lockup" className="mt-5">
@@ -370,7 +449,7 @@ export function AccountState(props) {
                   <div className="input-group">
                     <input
                       className="form-control"
-                      type={"textbox"}
+                      type={"text"}
                       value={selectStakingPool}
                       onChange={(e) => setSelectStakingPool(e.target.value)}
                     />
