@@ -32,6 +32,10 @@ export function useNearView({
       return;
     }
 
+    setValue(initialValue);
+
+    let alive = true;
+
     near
       .view({
         contractId,
@@ -40,8 +44,19 @@ export function useNearView({
         argsBase64,
         blockId,
       })
-      .then(setValue)
-      .catch((e) => setValue(errorValue));
+      .then((v) => {
+        if (alive) {
+          setValue(v);
+        }
+      })
+      .catch((e) => {
+        if (alive) {
+          setValue(errorValue);
+        }
+      });
+    return () => {
+      alive = false;
+    };
   }, [contractId, methodName, serializedArgs, blockId, ...(extraDeps ?? [])]);
 
   return value;

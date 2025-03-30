@@ -10,6 +10,14 @@ const MAX_NUM_PROPOSALS = 10;
 export function VotingState(props) {
   const [loading, setLoading] = useState(false);
   const nonce = useNonce();
+  const votingConfig = useNearView({
+    initialValue: null,
+    contractId: Constants.VOTING_CONTRACT_ID,
+    methodName: "get_config",
+    args: {},
+    extraDeps: [nonce],
+    errorValue: "err",
+  });
   const numProposals = useNearView({
     initialValue: null,
     contractId: Constants.VOTING_CONTRACT_ID,
@@ -29,7 +37,7 @@ export function VotingState(props) {
     extraDeps: [nonce, numProposals],
     errorValue: null,
   });
-  const [showLast, setShowLast] = useState(null);
+  const [showProposal, setShowProposal] = useState(null);
 
   const numApprovedProposals = useNearView({
     initialValue: null,
@@ -70,7 +78,7 @@ export function VotingState(props) {
                 <div key={p.id}>
                   <code
                     onClick={() => {
-                      setShowLast(p.id);
+                      setShowProposal(p.id);
                     }}
                   >
                     #{p.id}: {p.title}
@@ -80,9 +88,12 @@ export function VotingState(props) {
             })
           : "..."}
       </div>
-      {showLast !== null && lastProposals && (
+      {showProposal !== null && lastProposals && (
         <div className="mt-1 mb-3">
-          <Proposal proposal={lastProposals[showLast]} />
+          <Proposal
+            proposal={lastProposals[showProposal]}
+            votingConfig={votingConfig}
+          />
         </div>
       )}
       <div>
@@ -129,6 +140,7 @@ export function VotingState(props) {
             proposal={lastApprovedProposals.find(
               (p) => p.id === activeProposalId,
             )}
+            votingConfig={votingConfig}
           />
         </div>
       )}

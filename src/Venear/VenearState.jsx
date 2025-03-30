@@ -2,29 +2,11 @@ import { useEffect, useState } from "react";
 import { useNearView } from "../hooks/useNearView.js";
 import { Constants } from "../hooks/constants.js";
 import { useNonce } from "../hooks/useNonce.js";
-import Big from "big.js";
+import { processAccount } from "../hooks/utils.js";
 
 function processAccounts(accounts) {
   return accounts
-    .map((account) => {
-      const delegatedBalance = Big(
-        account.account.delegated_balance.near_balance,
-      ).add(Big(account.account.delegated_balance.extra_venear_balance));
-      const balance = Big(account.account.balance.near_balance).add(
-        Big(account.account.balance.extra_venear_balance),
-      );
-      let totalBalance = delegatedBalance;
-      if (!account.account.delegation) {
-        totalBalance = totalBalance.add(balance);
-      }
-      return {
-        accountId: account.account.account_id,
-        balance,
-        delegatedBalance,
-        totalBalance,
-        delegation: account.account.delegation,
-      };
-    })
+    .map((accountInfo) => processAccount(accountInfo.account))
     .toSorted((a, b) => b.totalBalance.cmp(a.totalBalance));
 }
 
