@@ -67,25 +67,33 @@ export function VotingState(props) {
         Contract ID: <code>{Constants.VOTING_CONTRACT_ID}</code>
       </div>
       <div>
-        Number of Proposals:{" "}
+        Total number of Proposals:{" "}
         <code>{numProposals === null ? "..." : numProposals}</code>
       </div>
       <div>
-        Last Proposals:{" "}
+        Pending Proposals:{" "}
         {lastProposals
-          ? lastProposals.map((p) => {
-              return (
-                <div key={p.id}>
-                  <code
-                    onClick={() => {
-                      setShowProposal(p.id);
-                    }}
-                  >
-                    #{p.id}: {p.title}
-                  </code>
-                </div>
-              );
-            })
+          ? lastProposals
+              .filter(
+                (p) =>
+                  !lastApprovedProposals ||
+                  !lastApprovedProposals.find((p2) => p2.id === p.id),
+              )
+              .map((p) => {
+                return (
+                  <div key={p.id}>
+                    <code
+                      onClick={() => {
+                        setShowProposal((oldId) =>
+                          oldId === p.id ? null : p.id,
+                        );
+                      }}
+                    >
+                      #{p.id}: {p.title}
+                    </code>
+                  </div>
+                );
+              })
           : "..."}
       </div>
       {showProposal !== null && lastProposals && (

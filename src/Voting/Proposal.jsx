@@ -39,6 +39,8 @@ export function Proposal(props) {
 
   const snapshotBlockHeight =
     proposal?.snapshot_and_state?.snapshot?.block_height;
+  const totalVotingPower = proposal?.snapshot_and_state?.total_venear;
+  const snapshotLength = proposal?.snapshot_and_state?.snapshot?.length;
   let [merkleProof, vAccount] = useNearView({
     initialValue: [null, null],
     condition: ({ extraDeps: [nonce, accountId, snapshotBlockHeight] }) =>
@@ -87,6 +89,12 @@ export function Proposal(props) {
       <div>
         <strong>Status:</strong> {proposal.status}
       </div>
+      {totalVotingPower && (
+        <div key="totalVotingPower">
+          <strong>Total veNEAR:</strong>
+          {` ${Big(totalVotingPower).div(1e24).toFixed(3)} veNEAR`}
+        </div>
+      )}
       <div>
         <strong>Description:</strong> <p>{proposal.description}</p>
       </div>
