@@ -127,7 +127,8 @@ export function Proposal(props) {
             !accountId ||
             activeVote === null ||
             !account ||
-            account?.totalBalance.eq(0)
+            account?.totalBalance.eq(0) ||
+            existingVote === activeVote
           }
           onClick={async () => {
             setLoading(true);
