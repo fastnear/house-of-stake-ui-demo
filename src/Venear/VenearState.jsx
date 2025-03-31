@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useNearView } from "../hooks/useNearView.js";
 import { Constants } from "../hooks/constants.js";
 import { useNonce } from "../hooks/useNonce.js";
-import { processAccount } from "../hooks/utils.js";
+import { processAccount, toVeNear } from "../hooks/utils.js";
 
 function processAccounts(accounts) {
   return accounts
@@ -60,12 +60,7 @@ export function VenearState(props) {
         Contract ID: <code>{Constants.VENEAR_CONTRACT_ID}</code>
       </div>
       <div>
-        Total Supply:{" "}
-        <code>
-          {totalSupply
-            ? `${(parseFloat(totalSupply) / 1e24).toFixed(3)} veNEAR`
-            : `...`}
-        </code>
+        Total Supply: <code>{toVeNear(totalSupply)}</code>
       </div>
       <div>
         Total number of Accounts:{" "}
@@ -78,8 +73,7 @@ export function VenearState(props) {
             {accounts.slice(0, 10).map((account, i) => (
               <div key={i}>
                 <code>
-                  {account.accountId}:{" "}
-                  {account.totalBalance.div(1e24).toFixed(3)} veNEAR
+                  {account.accountId}: {toVeNear(account.totalBalance)}
                 </code>
               </div>
             ))}

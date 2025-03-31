@@ -27,3 +27,9 @@ export function processAccount(account) {
     delegation: account.delegation,
   };
 }
+
+export const toNear = (amount) =>
+  amount ? `${(parseFloat(amount) / 1e24).toFixed(3)} NEAR` : `...`;
+
+export const toVeNear = (amount) =>
+  amount ? `${(parseFloat(amount) / 1e24).toFixed(3)} veNEAR` : `...`;

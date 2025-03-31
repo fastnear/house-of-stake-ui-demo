@@ -4,7 +4,7 @@ import React from "react";
 import { useNearView } from "../hooks/useNearView.js";
 import { Constants } from "../hooks/constants.js";
 import { useNonce } from "../hooks/useNonce.js";
-import { processAccount } from "../hooks/utils.js";
+import { processAccount, toVeNear } from "../hooks/utils.js";
 import Big from "big.js";
 
 function voteText(proposal, vote) {
@@ -14,7 +14,25 @@ function voteText(proposal, vote) {
     ? Big(votes.total_venear).div(Big(totalVotes.total_venear))
     : Big(0);
   const numVotes = votes.total_votes;
-  return `${Big(votes.total_venear).div(1e24).toFixed(3)} veNEAR (${percent.mul(100).toFixed(2)}% ${numVotes} votes)`;
+  return `${toVeNear(votes.total_venear)} (${percent.mul(100).toFixed(2)}% ${numVotes} votes)`;
+}
+
+function timeLeft(proposal) {
+  const now = new Date();
+  const endTime = new Date(
+    (parseFloat(proposal.voting_start_time_ns) +
+      parseFloat(proposal.voting_duration_ns)) /
+      1e6,
+  );
+  const timeLeft = endTime - now;
+  if (timeLeft < 0) {
+    return "Voting ended";
+  }
+  const days = Math.floor(timeLeft / (1000 * 60 * 60 * 24));
+  const hours = Math.floor((timeLeft / (1000 * 60 * 60)) % 24);
+  const minutes = Math.floor((timeLeft / (1000 * 60)) % 60);
+  const seconds = Math.floor((timeLeft / 1000) % 60);
+  return `${days}d ${hours}h ${minutes}m ${seconds}s`;
 }
 
 export function Proposal(props) {
@@ -91,9 +109,29 @@ export function Proposal(props) {
         <strong>Status:</strong> {proposal.status}
       </div>
       {totalVotingPower && (
-        <div key="totalVotingPower">
-          <strong>Total veNEAR:</strong>
-          {` ${Big(totalVotingPower).div(1e24).toFixed(3)} veNEAR`}
+        <div key="stats">
+          <div>
+            <strong>Voted:</strong>{" "}
+            {toVeNear(proposal.total_votes.total_venear)} /{" "}
+            {toVeNear(totalVotingPower)} (
+            {Big(proposal.total_votes.total_venear)
+              .div(Big(totalVotingPower))
+              .mul(100)
+              .toFixed(2)}
+            %)
+          </div>
+          <div>
+            <strong>Accounts voted:</strong> {proposal.total_votes.total_votes}{" "}
+            / {snapshotLength} (
+            {(
+              (proposal.total_votes.total_votes * 100) /
+              snapshotLength
+            ).toFixed(2)}
+            %)
+          </div>
+          <div>
+            <strong>Time left to vote:</strong> {timeLeft(proposal)}
+          </div>
         </div>
       )}
       <div>
@@ -178,10 +216,7 @@ export function Proposal(props) {
           }}
         >
           {existingVote !== null && activeVote !== existingVote && "CHANGE"}{" "}
-          VOTE with{" "}
-          {account
-            ? `${account.totalBalance.div(1e24).toFixed(3)} veNEAR`
-            : "..."}
+          VOTE with {toVeNear(account?.totalBalance)}
         </button>
       </div>
     </div>

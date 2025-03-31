@@ -5,9 +5,7 @@ import { useNearView } from "../hooks/useNearView.js";
 import { useNearAccount } from "../hooks/useNearAccount.js";
 import { useNonce } from "../hooks/useNonce.js";
 import Big from "big.js";
-
-const toNear = (amount) =>
-  amount ? `${(parseFloat(amount) / 1e24).toFixed(3)} NEAR` : `...`;
+import { toNear, toVeNear } from "../hooks/utils.js";
 
 export function AccountState(props) {
   const accountId = useAccount();
@@ -164,7 +162,7 @@ export function AccountState(props) {
         Account Balance: <code>{toNear(accountBalance)}</code>
       </div>
       <div>
-        veNEAR Balance: <code>{toNear(veNearBalance)}</code>
+        veNEAR Balance: <code>{toVeNear(veNearBalance)}</code>
       </div>
       {showAccountInfo && (
         <div key="account-info">
